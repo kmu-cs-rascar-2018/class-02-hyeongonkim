@@ -3,11 +3,12 @@
 ## 1. 센서 인식 상황별로 Step-Turn을 수행하였습니다.
     verylittle_turn = 5
     little_turn = 10
-    midium_turn = 20
+    medium_turn = 20
     heavy_turn = 35
 
     1) 30회 반복 주행을 통해 상황에 적합한 조향각을 새로 산출하였습니다.
-    2) Step-Turn각도를 midium_turn 조건에서 코스의 곡률에 적합한 20도로 변경하였습니다.
+    2) Step-Turn각도를 medium_turn 조건에서 코스의 곡률에 적합한 20도로 변경하였습니다.
+    3) 위 Step-Turn각은 곡률 반경이 1m인 트랙에서 적합합니다.
 
 ## 2. while문을 통해 반복해서 라인을 감지하며 전진하고, 정지조건에서 break문을 통해 빠져나옵니다.
     while True:
@@ -36,7 +37,7 @@
             elif detector[2] == 0:
                 if detector[1] == 1:
                     if detector[0] == 0: angle = little_turn
-                    elif detector[0] == 1: angle = midium_turn
+                    elif detector[0] == 1: angle = medium_turn
                 elif detector[1] == 0:
                     if detector[0] == 1: angle = heavy_turn
             self.car.steering.turn_left(90 - angle)
@@ -47,14 +48,15 @@
             elif detector[2] == 0:
                 if detector[3] == 1:
                     if detector[4] == 0: angle = little_turn
-                    elif detector[4] == 1: angle = midium_turn
+                    elif detector[4] == 1: angle = medium_turn
                 elif detector[3] == 0:
                     if detector[4] == 1: angle = heavy_turn
             self.car.steering.turn_right(90 + angle)
 
     1) 우측 또는 좌측 센서 두개에 라인이 감지되지 않는다면 반대쪽으로 훑어가며 라인이 감지되는 상황을 판단하여 Step-Turn합니다.
+    2) 조건문 중첩을 통해 판단하기 때문에 라인이 3개 이상일 때도 적정 각을 찾아 주행할 수 있습니다.
 
-## 4. 값이 튀거나 동시에 3개 이상의 센서에서 감지될 경우 현재 주행경로를 유지합니다.
+## 4. 튀는 값이 감지될 경우 현재 주행경로를 유지합니다.
     else: continue
     
     1) 판단가능한 상황이 될 때까지 현재 조향각과 속도로 주행합니다.
