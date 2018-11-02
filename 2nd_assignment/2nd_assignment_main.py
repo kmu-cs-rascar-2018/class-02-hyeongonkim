@@ -38,7 +38,7 @@ class myCar(object):
 
             verylittle_turn = 5
             little_turn = 10
-            midium_turn = 20
+            medium_turn = 20
             heavy_turn = 35
 
             # 라인이 정중앙에 있을 때 직진
@@ -57,7 +57,7 @@ class myCar(object):
                 elif detector[2] == 0:
                     if detector[1] == 1:
                         if detector[0] == 0: angle = little_turn
-                        elif detector[0] == 1: angle = midium_turn
+                        elif detector[0] == 1: angle = medium_turn
                     elif detector[1] == 0:
                         if detector[0] == 1: angle = heavy_turn
                 self.car.steering.turn_left(90 - angle)
@@ -68,7 +68,7 @@ class myCar(object):
                 elif detector[2] == 0:
                     if detector[3] == 1:
                         if detector[4] == 0: angle = little_turn
-                        elif detector[4] == 1: angle = midium_turn
+                        elif detector[4] == 1: angle = medium_turn
                     elif detector[3] == 0:
                         if detector[4] == 1: angle = heavy_turn
                 self.car.steering.turn_right(90 + angle)
