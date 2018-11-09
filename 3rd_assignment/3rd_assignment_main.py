@@ -28,7 +28,7 @@ class myCar(object):
         time.sleep(1)
         self.car.accelerator.ready()
         self.car.accelerator.stop()
-        lap_cnt = 0;
+        lap_cnt = 0
         obstacle_detect = False
         guide_detect = False
 
@@ -68,8 +68,7 @@ class myCar(object):
             elif detector == [1, 1, 1, 1, 1]:
                 lap_cnt += 1
                 if lap_cnt == 2:
-                    self.car.steering.center_alignment()
-                    self.car.accelerator.stop()
+                    self.car.drive_parking()
                     break
                 while detector == [1, 1, 1, 1, 1]:
                     detector = self.car.line_detector.read_digital()
