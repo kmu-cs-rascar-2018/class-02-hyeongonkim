@@ -52,6 +52,7 @@ class myCar(object):
                 while n_ultrasonic == -1 or n_ultrasonic > 25:
                     n_ultrasonic = self.car.distance_detector.get_distance()
                 distance = (ultrasonic + n_ultrasonic) / 2
+                # 장애물을 감지했다고 최종 판단하고 좌측으로 회피 조향
                 if distance < 20:
                     obstacle_detect == True
                     self.car.steering.turn_left(55)
@@ -73,7 +74,7 @@ class myCar(object):
                 while detector == [1, 1, 1, 1, 1]:
                     detector = self.car.line_detector.read_digital()
 
-            # 장애물을 감지하고 가이드라인을 향해 조향
+            # 장애물을 감지한 상태에서 가이드라인을 향해 직진주행 유지
             elif detector == [0, 0, 0, 0, 0] and obstacle_detect == True and guide_detect == False:
                 guide_detect == True
                 self.car.steering.center_alignment()
