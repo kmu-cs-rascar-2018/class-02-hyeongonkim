@@ -109,14 +109,13 @@ class myCar(object):
             # 정지조건(0번, 3번 센서에 라인이 동시감지)이 감지되었을 때 lap_cnt를 증가시키고, 2랩 완주 후 정지
             elif detector[0] == 1 and detector[3] == 1:
                 lapcnt_time = time.time()
-                print(lapcnt_time - stopback_time)
                 if 2.5 > lapcnt_time - stopback_time > 0.7:
                     lap_cnt += 1
                     print("+1 lap")
                 if lap_cnt == 2:
                     end_time = time.time()
                     self.car.drive_parking()
-                    print("완주시간 : ", end_time - start_time)
+                    print("result : ", end_time - start_time)
                     break
                 while detector[0] == 1 and detector[3] == 1:
                     detector = self.car.line_detector.read_digital()
