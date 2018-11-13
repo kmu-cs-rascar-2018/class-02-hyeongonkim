@@ -59,7 +59,7 @@
         if distance < 30:
             print("obstacle detected")
             obstacle_detect == True
-            self.car.accelerator.go_forward(70)
+            self.car.accelerator.go_forward(90)
             self.car.steering.turn_left(50)
             time.sleep(0.5)
             self.car.steering.center_alignment()
@@ -87,8 +87,8 @@
 
     1) 값이 10초과 30미만으로 감지되면 신뢰도 검증을 위해 2차 측정을 시행합니다.
     2) 두 값의 평균치로 거리를 읽어들이고, 이 값이 30미만이면 장애물 감지로 판단합니다.
-    3) 회피를 위해 70의 속도로 주행하며 좌측으로 40도 조향후 0.5초 후 직진조향합니다.
-    4) 가이드라인을 감지하면 시간단축을 위해 바로 우측 조향하여 메인스트리트로 복귀합니다.
+    3) 회피를 위해 90의 속도로 주행하며 좌측으로 40도 조향후 0.5초 후 직진조향합니다.
+    4) 가이드라인을 감지하면 시간단축을 위해 70의 속도로 감속하고 우측 조향하여 메인스트리트로 복귀합니다.
         - 우측으로 40도 조향하고 0.8초 후 직진조향합니다.
     5) 메인스트리트를 감지하면 좌측 조향하여 일직선 정렬합니다.
         - 좌측으로 40도 조향하고 0.4초 후 while루프를 빠져나옵니다.
@@ -98,25 +98,25 @@
     # 라인이 정중앙에 있을 때 직진
     if detector == [0, 0, 1, 0, 0]:
         self.car.steering.center_alignment()
-        self.car.accelerator.go_forward(70)
+        self.car.accelerator.go_forward(100)
 
     # 좌회전을 위한 코드
     elif detector[3] == 0 and detector[4] == 0:
         if detector[2] == 1 and detector[1] == 1:
             angle = verylittle_turn
-            speed = 60
+            speed = 90
         elif detector[2] == 0:
             if detector[1] == 1:
                 if detector[0] == 0:
                     angle = little_turn
-                    speed = 50
+                    speed = 80
                 elif detector[0] == 1:
                     angle = medium_turn
-                    speed = 45
+                    speed = 70
             elif detector[1] == 0:
                 if detector[0] == 1:
                     angle = heavy_turn
-                    speed = 40
+                    speed = 60
         self.car.accelerator.go_forward(speed)
         self.car.steering.turn_left(90 - angle)
         determine_left = True
@@ -125,19 +125,19 @@
     elif detector[0] == 0 and detector[1] == 0:
         if detector[2] == 1 and detector[3] == 1:
             angle = verylittle_turn
-            speed = 60
+            speed = 90
         elif detector[2] == 0:
             if detector[3] == 1:
                 if detector[4] == 0:
                     angle = little_turn
-                    speed = 50
+                    speed = 80
                 elif detector[4] == 1:
                     angle = medium_turn
-                    speed = 45
+                    speed = 70
             elif detector[3] == 0:
                 if detector[4] == 1:
                     angle = heavy_turn
-                    speed = 40
+                    speed = 60
         self.car.accelerator.go_forward(speed)
         self.car.steering.turn_right(90 + angle)
         determine_left = False
@@ -145,11 +145,11 @@
     # 값이 튀면 현재 경로 유지
     else: continue
 
-    1) 직진 상황에서 70의 속도로 주행합니다.
-    2) verylittle_turn 상황에서 60의 속도로 주행합니다.
-    3) little_turn 상황에서 50의 속도로 주행합니다.
-    4) medium_turn 상황에서 45의 속도로 주행합니다.
-    5) heavy_turn 상황에서 40의 속도로 주행합니다.
+    1) 직진 상황에서 100의 속도로 주행합니다.
+    2) verylittle_turn 상황에서 90의 속도로 주행합니다.
+    3) little_turn 상황에서 80의 속도로 주행합니다.
+    4) medium_turn 상황에서 70의 속도로 주행합니다.
+    5) heavy_turn 상황에서 60의 속도로 주행합니다.
     6) 값이 튀면 현재 주행을 유지합니다.
     7) 원활하게 코너를 돌아나갈 수 있도록 단계별 감속을 실행합니다.
     8) 라인이 3개이상 감지되어도 적정 값을 찾아서 주행할 수 있습니다.
@@ -161,7 +161,7 @@
         time.sleep(0.2)
         while determine_left == True:
             self.car.steering.turn_right(130)
-            self.car.accelerator.go_backward(40)
+            self.car.accelerator.go_backward(50)
             detector = self.car.line_detector.read_digital()
             if detector[2] == 1:
                 stopback_time = time.time()
@@ -169,14 +169,14 @@
                 break
         while determine_left == False:
             self.car.steering.turn_left(50)
-            self.car.accelerator.go_backward(40)
+            self.car.accelerator.go_backward(50)
             detector = self.car.line_detector.read_digital()
             if detector[2] == 1:
                 stopback_time = time.time()
                 time.sleep(0.2)
                 break
     
-    1) 직전 조향의 반대방향으로 40도 조향하고 40의 속도로 후진합니다.
+    1) 직전 조향의 반대방향으로 40도 조향하고 50의 속도로 후진합니다.
     2) 중앙 트레이싱센서에 라인이 감지될 때 까지 후진합니다.
         - 라인이 감지되면 후진이 끝난 현재시간을 stopback_time에 저장하여 출발선 판단조건으로 사용합니다.
 

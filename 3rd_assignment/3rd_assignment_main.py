@@ -75,12 +75,12 @@ class myCar(object):
                 if distance < 30:
                     print("obstacle detected")
                     obstacle_detect == True
-                    self.car.accelerator.go_forward(70)
+                    self.car.accelerator.go_forward(90)
                     self.car.steering.turn_left(50)
                     time.sleep(0.5)
                     self.car.steering.center_alignment()
                     while True:
-                        self.car.accelerator.go_forward(70)
+                        self.car.accelerator.go_forward(90)
                         detector = self.car.line_detector.read_digital()
                         # 가이드라인을 감지하면 우측 조향하여 바로 메인스트리트 복귀
                         if detector != [0, 0, 0, 0, 0]:
@@ -93,7 +93,7 @@ class myCar(object):
                     while True:
                         detector = self.car.line_detector.read_digital()
                         # 메인스트리트 감지하면 좌측 조향하여 코너 진입 준비
-                        if detector[2] == 1:
+                        if detector[1] == 1:
                             print("on main street")
                             lastultrasonic_time = time.time()
                             obstacle_detect = False
@@ -104,7 +104,7 @@ class myCar(object):
             # 라인이 정중앙에 있을 때 직진
             if detector == [0, 0, 1, 0, 0]:
                 self.car.steering.center_alignment()
-                self.car.accelerator.go_forward(70)
+                self.car.accelerator.go_forward(100)
 
             # 정지조건(0번, 3번 센서에 라인이 동시감지)이 감지되었을 때 lap_cnt를 증가시키고, 2랩 완주 후 정지
             elif detector[0] == 1 and detector[3] == 1:
@@ -126,7 +126,7 @@ class myCar(object):
                 time.sleep(0.2)
                 while determine_left == True:
                     self.car.steering.turn_right(130)
-                    self.car.accelerator.go_backward(40)
+                    self.car.accelerator.go_backward(50)
                     detector = self.car.line_detector.read_digital()
                     if detector != [0, 0, 0, 0, 0]:
                         stopback_time = time.time()
@@ -134,7 +134,7 @@ class myCar(object):
                         break
                 while determine_left == False:
                     self.car.steering.turn_left(50)
-                    self.car.accelerator.go_backward(40)
+                    self.car.accelerator.go_backward(50)
                     detector = self.car.line_detector.read_digital()
                     if detector != [0, 0, 0, 0, 0]:
                         stopback_time = time.time()
@@ -145,19 +145,19 @@ class myCar(object):
             elif detector[3] == 0 and detector[4] == 0:
                 if detector[2] == 1 and detector[1] == 1:
                     angle = verylittle_turn
-                    speed = 60
+                    speed = 90
                 elif detector[2] == 0:
                     if detector[1] == 1:
                         if detector[0] == 0:
                             angle = little_turn
-                            speed = 50
+                            speed = 80
                         elif detector[0] == 1:
                             angle = medium_turn
-                            speed = 45
+                            speed = 70
                     elif detector[1] == 0:
                         if detector[0] == 1:
                             angle = heavy_turn
-                            speed = 40
+                            speed = 60
                 self.car.accelerator.go_forward(speed)
                 self.car.steering.turn_left(90 - angle)
                 determine_left = True
@@ -166,19 +166,19 @@ class myCar(object):
             elif detector[0] == 0 and detector[1] == 0:
                 if detector[2] == 1 and detector[3] == 1:
                     angle = verylittle_turn
-                    speed = 60
+                    speed = 90
                 elif detector[2] == 0:
                     if detector[3] == 1:
                         if detector[4] == 0:
                             angle = little_turn
-                            speed = 50
+                            speed = 80
                         elif detector[4] == 1:
                             angle = medium_turn
-                            speed = 45
+                            speed = 70
                     elif detector[3] == 0:
                         if detector[4] == 1:
                             angle = heavy_turn
-                            speed = 40
+                            speed = 60
                 self.car.accelerator.go_forward(speed)
                 self.car.steering.turn_right(90 + angle)
                 determine_left = False
