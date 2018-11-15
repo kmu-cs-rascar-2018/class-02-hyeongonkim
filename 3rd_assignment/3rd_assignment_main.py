@@ -37,7 +37,6 @@ class myCar(object):
         stopback_time = 차량이 라인을 벗어나 후진하고 정지하는 시간을 기록
         lastultrasonic_time = 초음파센서를 특정시간동안 비활성화 하기위해 사용
         start_time = 총 주행시간을 측정하기 위해 사용
-        determine_left = 라인을 벗어났을 때 직전 조향이 좌측 조향인지 판단
         '''
         lap_cnt = 0
         obstacle_detect = False
@@ -45,7 +44,6 @@ class myCar(object):
         stopback_time = 0
         lastultrasonic_time = 0
         start_time = time.time()
-        determine_left = True
 
         # do-while의 구조를 취하기 위해 while True 사용
         while True:
@@ -75,12 +73,12 @@ class myCar(object):
                 if distance < 30:
                     print("obstacle detected")
                     obstacle_detect == True
-                    self.car.accelerator.go_forward(90)
+                    self.car.accelerator.go_forward(100)
                     self.car.steering.turn_left(50)
                     time.sleep(0.5)
                     self.car.steering.center_alignment()
                     while True:
-                        self.car.accelerator.go_forward(90)
+                        self.car.accelerator.go_forward(100)
                         detector = self.car.line_detector.read_digital()
                         # 가이드라인을 감지하면 우측 조향하여 바로 메인스트리트 복귀
                         if detector != [0, 0, 0, 0, 0]:
@@ -109,7 +107,7 @@ class myCar(object):
             # 정지조건(0번, 3번 센서에 라인이 동시감지)이 감지되었을 때 lap_cnt를 증가시키고, 2랩 완주 후 정지
             elif detector[0] == 1 and detector[3] == 1:
                 lapcnt_time = time.time()
-                if 2.5 > lapcnt_time - stopback_time > 0.7:
+                if 2.5 > lapcnt_time - stopback_time > 0.45:
                     lap_cnt += 1
                     print("+1 lap")
                 if lap_cnt == 2:
@@ -123,17 +121,10 @@ class myCar(object):
             # 장애물을 감지하지 않은 상황에서 라인이 사라졌을 때 정지 후 반대방향으로 조향 후 후진
             elif detector == [0, 0, 0, 0, 0] and obstacle_detect == False:
                 self.car.accelerator.stop()
-                time.sleep(0.2)
-                while determine_left == True:
+                self.car.steering.center_alignment()
+                time.sleep(0.1)
+                while True:
                     self.car.steering.turn_right(130)
-                    self.car.accelerator.go_backward(50)
-                    detector = self.car.line_detector.read_digital()
-                    if detector != [0, 0, 0, 0, 0]:
-                        stopback_time = time.time()
-                        time.sleep(0.1)
-                        break
-                while determine_left == False:
-                    self.car.steering.turn_left(50)
                     self.car.accelerator.go_backward(50)
                     detector = self.car.line_detector.read_digital()
                     if detector != [0, 0, 0, 0, 0]:

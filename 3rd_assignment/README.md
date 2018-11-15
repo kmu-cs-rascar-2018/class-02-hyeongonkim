@@ -7,7 +7,6 @@
     stopback_time = 0
     lastultrasonic_time = 0
     start_time = time.time()
-    determine_left = True
 
     1) lap_cnt = 랩수 카운터
     2) obstacle_detect = 장애물을 감지했는지
@@ -20,8 +19,6 @@
     5) lastultrasonic_time = 초음파센서를 특정시간동안 비활성화 하기위해 사용
         - 초음파센서로 인해 라인감지에 딜레이가 생기고 판단 신뢰도가 떨어지는 일을 방지하기 위함
     6) start_time = 총 주행시간을 측정하기 위해 사용
-    7) determine_left = 라인을 벗어났을 때 직전 조향이 좌측 조향인지 판단
-        - 직전 조향의 반대방향으로 조향 후 후진하기 위함
 
 ## 2. do-while의 구조를 취하기 위해 while True의 무한 루프를 사용하였습니다.
     while True:
@@ -59,12 +56,12 @@
         if distance < 30:
             print("obstacle detected")
             obstacle_detect == True
-            self.car.accelerator.go_forward(90)
+            self.car.accelerator.go_forward(100)
             self.car.steering.turn_left(50)
             time.sleep(0.5)
             self.car.steering.center_alignment()
             while True:
-                self.car.accelerator.go_forward(70)
+                self.car.accelerator.go_forward(100)
                 detector = self.car.line_detector.read_digital()
                 # 가이드라인을 감지하면 우측 조향하여 바로 메인스트리트 복귀
                 if detector != [0, 0, 0, 0, 0]:
@@ -87,7 +84,7 @@
 
     1) 값이 10초과 30미만으로 감지되면 신뢰도 검증을 위해 2차 측정을 시행합니다.
     2) 두 값의 평균치로 거리를 읽어들이고, 이 값이 30미만이면 장애물 감지로 판단합니다.
-    3) 회피를 위해 90의 속도로 주행하며 좌측으로 40도 조향후 0.5초 후 직진조향합니다.
+    3) 회피를 위해 100의 속도로 주행하며 좌측으로 40도 조향후 0.5초 후 직진조향합니다.
     4) 가이드라인을 감지하면 시간단축을 위해 70의 속도로 감속하고 우측 조향하여 메인스트리트로 복귀합니다.
         - 우측으로 40도 조향하고 0.8초 후 직진조향합니다.
     5) 메인스트리트를 감지하면 좌측 조향하여 일직선 정렬합니다.
@@ -158,46 +155,39 @@
     # 장애물을 감지하지 않은 상황에서 라인이 사라졌을 때 정지 후 반대방향으로 조향 후 후진
     elif detector == [0, 0, 0, 0, 0] and obstacle_detect == False:
         self.car.accelerator.stop()
-        time.sleep(0.2)
-        while determine_left == True:
+        self.car.steering.center_alignment()
+        time.sleep(0.1)
+        while True:
             self.car.steering.turn_right(130)
             self.car.accelerator.go_backward(50)
             detector = self.car.line_detector.read_digital()
-            if detector[2] == 1:
+            if detector != [0, 0, 0, 0, 0]:
                 stopback_time = time.time()
-                time.sleep(0.2)
-                break
-        while determine_left == False:
-            self.car.steering.turn_left(50)
-            self.car.accelerator.go_backward(50)
-            detector = self.car.line_detector.read_digital()
-            if detector[2] == 1:
-                stopback_time = time.time()
-                time.sleep(0.2)
+                time.sleep(0.1)
                 break
     
     1) 직전 조향의 반대방향으로 40도 조향하고 50의 속도로 후진합니다.
-    2) 중앙 트레이싱센서에 라인이 감지될 때 까지 후진합니다.
+    2) 트레이싱센서에 라인이 감지될 때 까지 후진합니다.
         - 라인이 감지되면 후진이 끝난 현재시간을 stopback_time에 저장하여 출발선 판단조건으로 사용합니다.
 
 ## 8. 출발선이 감지되면 1랩씩 증가시켜 2랩을 완주 후 정지합니다.
     # 정지조건(0번, 3번 센서에 라인이 동시감지)이 감지되었을 때 lap_cnt를 증가시키고, 2랩 완주 후 정지
         elif detector[0] == 1 and detector[3] == 1:
             lapcnt_time = time.time()
-            if 2.4 > lapcnt_time - stopback_time > 0.7:
+            if 2.4 > lapcnt_time - stopback_time > 0.45:
                 lap_cnt += 1
                 print("+1 lap")
             if lap_cnt == 2:
                 end_time = time.time()
                 self.car.drive_parking()
-                print("완주시간 : ", end_time - start_time)
+                print("result : ", end_time - start_time)
                 break
             while detector[0] == 1 and detector[3] == 1:
                 detector = self.car.line_detector.read_digital()
     
     1) 출발선의 형태 불안정성을 감안하여 0번, 3번센서에 라인이 동시감지되는 상황을 정지조건으로 판단합니다.
-    2) 정지조건이 감지된 시간을 lapcnt_time에 저장하고 stopback_time과 차를 구해 0.7초과, 2.5미만 일 때만 출발선을 감지한 것으로 판단합니다.
-        - 수정조향과정에서 정지조건이 걸리면 0.7을 넘는 값이 나올 수 없음을 반복주행을 통해 확인하였습니다.
+    2) 정지조건이 감지된 시간을 lapcnt_time에 저장하고 stopback_time과 차를 구해 0.45초과, 2.5미만 일 때만 출발선을 감지한 것으로 판단합니다.
+        - 수정조향과정에서 정지조건이 걸리면 0.45을 넘는 값이 나올 수 없음을 반복주행을 통해 확인하였습니다.
         - 장애물을 피하고 메인스트리트로 복귀하는 과정에서 의도치않게 정지조건이 감지되면 2.5초가 넘는 값이 나옴을 확인했습니다.
-        - 따라서 마지막 코너를 돌아 출발선을 감지하기까지 0.7초 초과, 2.5초 미만의 시간이 걸림을 측정하고 값을 결정하였습니다.
+        - 따라서 마지막 코너를 돌아 출발선을 감지하기까지 0.45초 초과, 2.5초 미만의 시간이 걸림을 측정하고 값을 결정하였습니다.
     3) 완주시간을 계산하여 터미널에 출력합니다.
