@@ -45,7 +45,7 @@
 
     1) 30회 반복 트랙주행을 통해 최적의 각을 산출하였습니다.
 
-## 5. 초음파센서가 10초과 30미만 값을 감지하면 회피조향합니다.
+## 5. 초음파센서가 10초과 40미만 값을 감지하면 회피조향합니다.
     # 초음파센서가 장애물을 감지하고 튀는 값을 필터링
     if 10 < ultrasonic < 40 and obstacle_detect == False:
         n_ultrasonic = self.car.distance_detector.get_distance()
