@@ -54,7 +54,7 @@ class myCar(object):
             nowtime = time.time()
             ultrasonic_ontime = nowtime - lastultrasonic_time
             ultrasonic = 0
-            if ultrasonic_ontime > 6:
+            if ultrasonic_ontime > 4:
                 ultrasonic = self.car.distance_detector.get_distance()
 
             # Step-Turn 각 설정
@@ -64,18 +64,18 @@ class myCar(object):
             heavy_turn = 40
 
             # 초음파센서가 장애물을 감지하고 튀는 값을 필터링
-            if 10 < ultrasonic < 30 and obstacle_detect == False:
+            if 10 < ultrasonic < 40 and obstacle_detect == False:
                 n_ultrasonic = self.car.distance_detector.get_distance()
-                while n_ultrasonic == -1 or n_ultrasonic > 30:
+                while n_ultrasonic == -1 or n_ultrasonic > 40:
                     n_ultrasonic = self.car.distance_detector.get_distance()
                 distance = (ultrasonic + n_ultrasonic) / 2
                 # 장애물을 감지했다고 최종 판단하면 좌측으로 회피 조향
-                if distance < 30:
+                if distance < 40:
                     print("obstacle detected")
                     obstacle_detect == True
                     self.car.accelerator.go_forward(100)
                     self.car.steering.turn_left(50)
-                    time.sleep(0.5)
+                    time.sleep(0.52)
                     self.car.steering.center_alignment()
                     while True:
                         self.car.accelerator.go_forward(100)
@@ -83,15 +83,14 @@ class myCar(object):
                         # 가이드라인을 감지하면 우측 조향하여 바로 메인스트리트 복귀
                         if detector != [0, 0, 0, 0, 0]:
                             print("guideline detected")
-                            self.car.accelerator.go_forward(70)
                             self.car.steering.turn_right(130)
-                            time.sleep(0.8)
+                            time.sleep(0.7)
                             self.car.steering.center_alignment()
                             break
                     while True:
                         detector = self.car.line_detector.read_digital()
                         # 메인스트리트 감지하면 좌측 조향하여 코너 진입 준비
-                        if detector[1] == 1:
+                        if detector[2] == 1:
                             print("on main street")
                             lastultrasonic_time = time.time()
                             obstacle_detect = False
@@ -107,7 +106,7 @@ class myCar(object):
             # 정지조건(0번, 3번 센서에 라인이 동시감지)이 감지되었을 때 lap_cnt를 증가시키고, 2랩 완주 후 정지
             elif detector[0] == 1 and detector[3] == 1:
                 lapcnt_time = time.time()
-                if 2.5 > lapcnt_time - stopback_time > 0.45:
+                if 2.5 > lapcnt_time - stopback_time > 0.35:
                     lap_cnt += 1
                     print("+1 lap")
                 if lap_cnt == 2:
@@ -121,58 +120,58 @@ class myCar(object):
             # 장애물을 감지하지 않은 상황에서 라인이 사라졌을 때 정지 후 반대방향으로 조향 후 후진
             elif detector == [0, 0, 0, 0, 0] and obstacle_detect == False:
                 self.car.accelerator.stop()
-                self.car.steering.center_alignment()
                 time.sleep(0.1)
                 while True:
                     self.car.steering.turn_right(130)
-                    self.car.accelerator.go_backward(50)
+                    self.car.accelerator.go_backward(90)
                     detector = self.car.line_detector.read_digital()
-                    if detector != [0, 0, 0, 0, 0]:
+                    if detector[1] == 1 or detector[2] == 1:
                         stopback_time = time.time()
-                        time.sleep(0.1)
+                        self.car.accelerator.stop()
+                        self.car.steering.turn_left(50)
+                        self.car.accelerator.go_forward(80)
+                        time.sleep(0.25)
                         break
 
             # 좌회전을 위한 코드
             elif detector[3] == 0 and detector[4] == 0:
                 if detector[2] == 1 and detector[1] == 1:
                     angle = verylittle_turn
-                    speed = 90
+                    speed = 100
                 elif detector[2] == 0:
                     if detector[1] == 1:
                         if detector[0] == 0:
                             angle = little_turn
-                            speed = 80
+                            speed = 100
                         elif detector[0] == 1:
                             angle = medium_turn
-                            speed = 70
+                            speed = 90
                     elif detector[1] == 0:
                         if detector[0] == 1:
                             angle = heavy_turn
-                            speed = 60
+                            speed = 80
                 self.car.accelerator.go_forward(speed)
                 self.car.steering.turn_left(90 - angle)
-                determine_left = True
 
             # 우회전을 위한 코드
             elif detector[0] == 0 and detector[1] == 0:
                 if detector[2] == 1 and detector[3] == 1:
                     angle = verylittle_turn
-                    speed = 90
+                    speed = 100
                 elif detector[2] == 0:
                     if detector[3] == 1:
                         if detector[4] == 0:
                             angle = little_turn
-                            speed = 80
+                            speed = 100
                         elif detector[4] == 1:
                             angle = medium_turn
-                            speed = 70
+                            speed = 90
                     elif detector[3] == 0:
                         if detector[4] == 1:
                             angle = heavy_turn
-                            speed = 60
+                            speed = 80
                 self.car.accelerator.go_forward(speed)
                 self.car.steering.turn_right(90 + angle)
-                determine_left = False
             
             # 값이 튀면 현재 경로 유지
             else: continue
