@@ -24,6 +24,8 @@ class myCar(object):
     # =======================================================================
     def car_startup(self):
         # 출발 전 차량세팅
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(LED핀번호, GPIO.OUT)
         self.car.steering.center_alignment()
         time.sleep(1)
         self.car.accelerator.ready()
@@ -80,6 +82,7 @@ class myCar(object):
 
             # 추월구간시작(0번, 4번 센서에 라인이 동시감지)이 감지되었을 때 추월
             elif detector[0] == 1 and detector[4] == 1 and frontcar_detect == True:
+                GPIO.output(LED핀번호, True)
                 self.car.accelerator.go_forward(100)
                 self.car.steering.turn_left(50)
                 time.sleep(0.4)
@@ -93,6 +96,7 @@ class myCar(object):
                 while True:
                     detector = self.car.line_detector.read_digital()
                     if detector[1] == 1:
+                        GPIO.output(LED핀번호, False)
                         self.car.steering.turn_left(50)
                         frontcar_detect = False
                         break
