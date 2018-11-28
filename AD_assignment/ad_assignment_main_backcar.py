@@ -35,20 +35,21 @@ class myCar(object):
         최대조향각 40도로 설정
         determain_left = 직전조향 좌조향 확인
         target_distance = 앞차량 안전거리
-        detect_Tpark = T자 주차구간 판단
         '''
         frontcar_detect = False
         self.car.steering.turning_max = 40
         speed = 50
         determine_left = True
         target_distance = 25
-        detect_Tpark = False
 
         # do-while의 구조를 취하기 위해 while True 사용
         while True:
             # 라인감지 시작
             detector = self.car.line_detector.read_digital()
             ultrasonic = self.car.distance_detector.get_distance()
+            rgb = self.car.color_getter.get_raw_data()
+            color_temp = self.car.color_getter.calculate_color_temperature(rgb[0], rgb[1], rgb[2])
+            lux = self.car.color_getter.calculate_lux(rgb[0], rgb[1], rgb[2])
 
             # Step-Turn 각 설정
             verylittle_turn = 10
@@ -70,6 +71,7 @@ class myCar(object):
                 speed = 80
 
             # RGB read need
+            
 
             # 라인이 정중앙에 있을 때 직진
             if detector == [0, 0, 1, 0, 0]:
