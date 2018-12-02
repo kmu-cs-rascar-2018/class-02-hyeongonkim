@@ -8,7 +8,7 @@
 
 from car import Car
 import time
-
+import RPi.GPIO as GPIO
 
 class myCar(object):
 
@@ -25,24 +25,14 @@ class myCar(object):
     def car_startup(self):
         # 출발 전 차량세팅
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(LED핀번호, GPIO.OUT)
+        GPIO.setup(31, GPIO.OUT)
         self.car.steering.center_alignment()
         time.sleep(1)
         self.car.accelerator.ready()
         self.car.accelerator.stop()
-
-        '''
-        조종에 참조할 변수들 생성
-        frontcar_detect = 앞차량 감지 현황
-        최대조향각 40도로 설정
-        determain_left = 직전조향 좌조향 확인
-        target_distance = 앞차량 안전거리
-        '''
-        frontcar_detect = False
         self.car.steering.turning_max = 40
         speed = 50
-        determine_left = True
-        target_distance = 25
+        target_distance = 30
 
         # do-while의 구조를 취하기 위해 while True 사용
         while True:
@@ -50,137 +40,130 @@ class myCar(object):
             detector = self.car.line_detector.read_digital()
             ultrasonic = self.car.distance_detector.get_distance()
             rgb = self.car.color_getter.get_raw_data()
-            color_temp = self.car.color_getter.calculate_color_temperature(rgb[0], rgb[1], rgb[2])
-            lux = self.car.color_getter.calculate_lux(rgb[0], rgb[1], rgb[2])
+            GPIO.output(31, False)
 
-            # Step-Turn 각 설정
-            verylittle_turn = 10
-            little_turn = 20
-            medium_turn = 30
-            heavy_turn = 40
-
-            # 초음파센서가 앞차량을 감지하고 튀는 값을 필터링
-            if 10 < ultrasonic < 35:
+            # 초음파센서가 앞차량을 감지
+            if 10 < ultrasonic < 40:
                 # 앞차량을 감지했다고 최종 판단하면 속도 조절 시작
                 if ultrasonic < target_distance:
-                    frontcar_detect == True
-                    speed -= 2
+                    speed -= 5
                 elif ultrasonic > target_distance:
-                    frontcar_detect == True
-                    speed += 2
-            
-            if ultrasonic > 35:
-                speed = 80
+                    speed += 5
+                elif ultrasonic < 20:
+                    self.car.accelerator.stop()
+                    while True:
+                        ultrasonic = self.car.distance_detector.get_distance()
+                        if ultrasonic > 30:
+                            break
 
-            # RGB read need
-            
+            # 거리가 35보다 멀어지면 정상속도로 가속
+            if ultrasonic > 40:
+                speed = 60
+
+            # 속도가 30 미만으로 떨어지면 모터 작동에 문제가 생기므로 최소값 고정
+            if speed < 30:
+                speed = 30
+            if speed > 60:
+                speed = 60
+
+            # RGB Red감지시 3초 정지
+            if rgb[0] > 250 and rgb[1] < 200 and rgb[2] < 200:
+                self.car.accelerator.stop()
+                self.car.steering.center_alignment()
+                time.sleep(3)
+                self.car.accelerator.go_forward(50)
+                time.sleep(0.3)
 
             # 라인이 정중앙에 있을 때 직진
             if detector == [0, 0, 1, 0, 0]:
                 self.car.steering.center_alignment()
-                self.car.accelerator.go_forward(speed)
 
             # 추월구간시작(0번, 4번 센서에 라인이 동시감지)이 감지되었을 때 추월
-            elif detector[0] == 1 and detector[4] == 1 and frontcar_detect == True:
-                GPIO.output(LED핀번호, True)
-                self.car.accelerator.go_forward(100)
-                self.car.steering.turn_left(50)
-                time.sleep(0.4)
-                self.car.steering.turn_right(130)
-                time.sleep(0.45)
-                self.car.steering.center_alignment()
-                time.sleep(0.2)
-                self.car.steering.turn_right(130)
-                time.sleep(0.4)
-                self.car.steering.center_alignment()
-                while True:
-                    detector = self.car.line_detector.read_digital()
-                    if detector[1] == 1:
-                        GPIO.output(LED핀번호, False)
-                        self.car.steering.turn_left(50)
-                        frontcar_detect = False
-                        break
+            elif detector[0] == 1 and detector[3] == 1 and detector[4] == 1:
+                if ultrasonic < 30:
+                    self.car.steering.turn_right(130)
+                    self.car.accelerator.go_forward(50)
+                    GPIO.output(31, True)
+                    self.car.steering.turn_right(130)
+                    time.sleep(0.9)
+                    self.car.steering.turn_left(50)
+                    while True:
+                        detector = self.car.line_detector.read_digital()
+                        if detector[3] == 1:
+                            GPIO.output(31, False)
+                            self.car.steering.turn_right(130)
+                            time.sleep(0.4)
+                            break
+                else:
+                    continue
 
             # 라인이 사라졌을 때 정지 후 반대방향으로 조향 후 후진
             elif detector == [0, 0, 0, 0, 0]:
                 self.car.accelerator.stop()
-                if determine_left == True:
-                    while True:
-                        self.car.steering.turn_right(130)
+                while True:
+                    self.car.steering.turn_left(55)
+                    time.sleep(0.1)
+                    self.car.accelerator.go_backward(50)
+                    detector = self.car.line_detector.read_digital()
+                    if detector[4] == 1 or detector[3] == 1:
+                        self.car.accelerator.stop()
+                        self.car.steering.turn_right(125)
                         time.sleep(0.1)
-                        self.car.accelerator.go_backward(50)
-                        detector = self.car.line_detector.read_digital()
-                        if detector[0] == 1 or detector[1] == 1:
-                            self.car.accelerator.stop()
-                            self.car.steering.turn_left(50)
-                            time.sleep(0.1)
-                            self.car.accelerator.go_forward(speed)
-                            break
-                elif determine_left == False:
-                    while True:
-                        self.car.steering.turn_left(50)
-                        time.sleep(0.1)
-                        self.car.accelerator.go_backward(50)
-                        detector = self.car.line_detector.read_digital()
-                        if detector[4] == 1 or detector[3] == 1:
-                            self.car.accelerator.stop()
-                            self.car.steering.turn_right(130)
-                            time.sleep(0.1)
-                            self.car.accelerator.go_forward(speed)
-                            break
+                        self.car.accelerator.go_forward(50)
+                        break
 
             # T자 후진주차 코드
-            elif detector[0] == 1 and detector[1] == 1 and detector[2] == 1:
+            elif detector[0] == 0 and detector[2] == 1 and detector[4] == 1:
                 while True:
                     detector = self.car.line_detector.read_digital()
-                    if detector[0] == 1 and detector[1] == 1 and detector[2] == 1:
+                    if detector[2] == 1 and detector[4] == 1:
                         continue
                     elif detector[0] == 0 and detector[4] == 0 and detector[2] == 1:
-                        # 최적의 주차 속도/조향 산출 필요
+                        # 최적의 주차 속도/조향 산출
+                        self.car.accelerator.go_forward(40)
+                        time.sleep(0.3)
+                        self.car.steering.turn_left(60)
+                        time.sleep(0.6)
+                        self.car.accelerator.stop()
+                        self.car.steering.turn_right(120)
+                        self.car.accelerator.go_backward(40)
+                        time.sleep(1.8)
+                        self.car.steering.center_alignment()
+                        time.sleep(0.25)
+                        self.car.accelerator.stop()
+                        time.sleep(3)
+                        self.car.steering.turn_right(125)
+                        time.sleep(0.2)
+                        self.car.accelerator.go_forward(40)
+                        time.sleep(2.5)
+                        
                     else: break
 
             # 좌회전을 위한 코드
-            elif detector[3] == 0 and detector[4] == 0:
-                if detector[2] == 1 and detector[1] == 1:
-                    angle = verylittle_turn
-                elif detector[2] == 0:
-                    if detector[1] == 1:
-                        if detector[0] == 0:
-                            angle = little_turn
-                            speed = 50
-                        elif detector[0] == 1:
-                            angle = medium_turn
-                            speed = 50
-                    elif detector[1] == 0:
-                        if detector[0] == 1:
-                            angle = heavy_turn
-                            speed = 50
-                self.car.accelerator.go_forward(speed)
-                determine_left = True
-                self.car.steering.turn_left(90 - angle)
+            elif detector == [0, 1, 1, 0, 0]:
+                self.car.steering.turn_left(75)
+            elif detector == [0, 1, 0, 0, 0]:
+                self.car.steering.turn_left(70)
+            elif detector == [1, 1, 0, 0, 0]:
+                self.car.steering.turn_left(60)
+            elif detector == [1, 0, 0, 0, 0]:
+                self.car.steering.turn_left(55)
 
             # 우회전을 위한 코드
-            elif detector[0] == 0 and detector[1] == 0:
-                if detector[2] == 1 and detector[3] == 1:
-                    angle = verylittle_turn
-                elif detector[2] == 0:
-                    if detector[3] == 1:
-                        if detector[4] == 0:
-                            angle = little_turn
-                            speed = 50
-                        elif detector[4] == 1:
-                            angle = medium_turn
-                            speed = 50
-                    elif detector[3] == 0:
-                        if detector[4] == 1:
-                            angle = heavy_turn
-                            speed = 50
-                self.car.accelerator.go_forward(speed)
-                determine_left = False
-                self.car.steering.turn_right(90 + angle)
+            elif detector == [0, 0, 1, 1, 0]:
+                self.car.steering.turn_right(105)
+            elif detector == [0, 0, 0, 1, 0]:
+                self.car.steering.turn_right(110)
+            elif detector == [0, 0, 0, 1, 1]:
+                self.car.steering.turn_right(120)
+            elif detector == [0, 0, 0, 0, 1]:
+                self.car.steering.turn_right(125)
             
             # 값이 튀면 현재 경로 유지
             else: continue
+            
+            # 계산된 속도를 전진으로 입력
+            self.car.accelerator.go_forward(speed)
 
         pass
 
