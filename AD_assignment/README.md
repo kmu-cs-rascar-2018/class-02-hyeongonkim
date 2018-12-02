@@ -19,13 +19,11 @@
     4) 미션에 사용한 차량과 소프트웨어가 두개인 만큼 본 마크다운에서는 각 코드의 공통된 요소에 대해서 먼저 설명하고, 양보 차량과 추월 차량의 특화 코드를 따로 기술합니다.
 
 ## 2. 공통 요소에 관하여
-    '''{.python}
     # 출발 전 차량세팅
     self.car.steering.center_alignment()
     time.sleep(1)
     self.car.accelerator.ready()
     self.car.accelerator.stop()
-    '''
     
     1) 출발 전 차량의 조향축과 추진모터를 초기화합니다.
 
